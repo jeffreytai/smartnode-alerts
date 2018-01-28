@@ -1,0 +1,15 @@
+**.DS_Store
+
+# IntelliJ files
+.idea/
+
+# Build files
+target/
+
+# Java class files
+*.class
+
+**/resources/*.properties
+
+## Bash scripts
+**.sh

@@ -26,12 +26,12 @@ public class SmartNode {
     /**
      * Url for retrieving smartnode information
      */
-    private final String SMARTNODE_URL = "https://smartcash.bitcoiner.me/smartnodes/launch/";
+    private final String SMARTNODE_URL = "https://smartcash.bitcoiner.me/smartnodes/calculator/";
 
     /**
      * Timeout in milliseconds
      */
-    private final Integer WAIT_IN_MS = 10000;
+    private final Integer WAIT_IN_MS = 5000;
 
     /**
      * Initial smart node investment
@@ -69,31 +69,23 @@ public class SmartNode {
                 Document doc = Jsoup.parse(driver.getPageSource());
 
                 // Retrieve relevant HTML elements
-                Element time = doc.getElementById("time");
-                Element futureLocalTime = doc.getElementById("futurelocal");
-                Element smartNodeReward = doc.getElementById("pernodesmart");
-                Element nodesOnline = doc.getElementById("online");
+                Element currentSmartCashPrice = doc.getElementById("smartcash_usd_price_0");
+                Element nodesOnline = doc.getElementById("number_of_smartnodes_input");
+                Element smartNodeReward = doc.getElementById("initial_smart_per_day_per_smartnode");
 
                 // Parse elements for details
-                String timeUntilLaunch = time.text();
-                String timeAtLaunch = futureLocalTime.text();
+                String currentPrice = currentSmartCashPrice.text();
+                String numberOfNodesOnline = nodesOnline.attr("value");
                 String currentSmartNodeReward = smartNodeReward.text();
-                String numberOfNodesOnline = nodesOnline.text();
 
                 // Retry if any values are still loading
-                if (timeUntilLaunch.equals(this.LOADING_STRING) ||
-                        timeAtLaunch.equals(this.LOADING_STRING) ||
-                        currentSmartNodeReward.equals(this.LOADING_STRING) ||
-                        numberOfNodesOnline.equals(this.LOADING_STRING)) {
+                if (currentPrice.equals(this.LOADING_STRING) ||
+                        numberOfNodesOnline.equals(this.LOADING_STRING) ||
+                        currentSmartNodeReward.equals(this.LOADING_STRING)) {
                     throw new IOException("Values still loading... retry");
                 }
 
                 // Process details
-                DateTimeFormatter formatter = DateTimeFormat.forPattern("MMM d, y H:m:s a z");
-                DateTime parsedTimeAtLaunch = formatter.parseDateTime(timeAtLaunch);
-
-                String[] timeUntilLaunchArray = timeUntilLaunch.split(" · ");
-
                 Double dailySmartNodeReward = Double.parseDouble(StringUtils.removeNonNumericCharacters(currentSmartNodeReward));
                 Double recoupInvestmentTime = Math.round(this.INITIAL_INVESTMENT / dailySmartNodeReward * 100.0) / 100.0;
 
@@ -102,11 +94,10 @@ public class SmartNode {
                 SlackWebhook slack = new SlackWebhook("smartcash-information");
 
                 StringBuilder sb = new StringBuilder();
-                if (parsedTimeAtLaunch.isAfterNow()) {
-                    sb.append("*Launch in*: ").append(String.join(" ", timeUntilLaunchArray)).append("\n");
-                    sb.append("*Launch time*: ").append(timeAtLaunch).append("\n");
-                }
 
+                sb.append("*Current SmartNode price*: ")
+                        .append(currentPrice)
+                        .append("\n");
                 sb.append("*Current SmartNode reward*: ")
                         .append(currentSmartNodeReward)
                         .append("/DAY\n");

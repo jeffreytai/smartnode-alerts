@@ -4,6 +4,7 @@ import com.crypto.slack.SlackWebhook;
 import com.crypto.utils.StringUtils;
 import io.github.bonigarcia.wdm.ChromeDriverManager;
 import org.joda.time.DateTime;
+import org.joda.time.Days;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.jsoup.Jsoup;
@@ -48,6 +49,11 @@ public class SmartNode {
      */
     private final String LOADING_STRING = "---";
 
+    /**
+     * Date of smart nodes release
+     */
+    private final String LAUNCH_DATE = "02-01-2018";
+
     public SmartNode() {}
 
     public void alertCurrentStatus() {
@@ -85,9 +91,15 @@ public class SmartNode {
                     throw new IOException("Values still loading... retry");
                 }
 
+                // Determine number of days since launch
+                DateTime today = DateTime.now();
+                DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy");
+                DateTime launchDate = formatter.parseDateTime(this.LAUNCH_DATE);
+                int daysPassed = Days.daysBetween(launchDate, today).getDays();
+
                 // Process details
                 Double dailySmartNodeReward = Double.parseDouble(StringUtils.removeNonNumericCharacters(currentSmartNodeReward));
-                Double recoupInvestmentTime = Math.round(this.INITIAL_INVESTMENT / dailySmartNodeReward * 100.0) / 100.0;
+                Double recoupInvestmentTime = Math.round((this.INITIAL_INVESTMENT / dailySmartNodeReward - daysPassed) * 100.0) / 100.0;
 
                 // Build and send slack alert
                 logger.info("Creating slack web client");
